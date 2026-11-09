@@ -37,6 +37,6 @@ jobs:
           cache: npm
       - run: npm ci --omit=optional
       - name: Vérification de syntaxe
-        run: for f in $(git ls-files '*.js'); do node --check "$f"; done
+        run: npm run check
       - name: Tests (concurrence, paiements, sécurité)
         run: npm test

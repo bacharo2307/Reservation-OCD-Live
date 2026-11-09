@@ -1,0 +1,25 @@
+name: Proposer une amélioration
+description: Une idée pour améliorer OCD LIVE.
+labels: ["amélioration"]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Quel besoin ?
+      description: Pour qui (commerçant, équipe OCD, assistante…) et quel problème cela résout.
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Votre proposition
+    validations:
+      required: true
+  - type: checkboxes
+    id: regles
+    attributes:
+      label: Vérifications
+      options:
+        - label: J'ai lu le cahier des charges (CLAUDE.md) et la feuille de route (docs/FEUILLE-DE-ROUTE.md).
+          required: true
+        - label: Je souhaite réaliser cette amélioration moi-même.

@@ -47,15 +47,24 @@ docs/                architecture, déploiement Railway, Cloudflare, sauvegardes
 
 ## Documentation
 
-- [docs/DEPLOIEMENT-RAILWAY.md](docs/DEPLOIEMENT-RAILWAY.md) — déploiement par Git et variables (deux suffisent)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — base de données, moteur de réservation, paiements, IA, sécurité
-- [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) — DNS, cache, protection
-- [docs/SAUVEGARDE-RESTAURATION.md](docs/SAUVEGARDE-RESTAURATION.md) — sauvegardes et test de restauration
+| Document | Pour qui | Contenu |
+| --- | --- | --- |
+| [docs/GUIDE-UTILISATION.md](docs/GUIDE-UTILISATION.md) | Équipe OCD | Parcours client, réceptionniste IA, packages, espace équipe |
+| [CLAUDE.md](CLAUDE.md) | Tous | Cahier des charges complet, règles qui priment sur tout |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Développeurs | Base de données, moteur de réservation, paiements, IA, sécurité |
+| [docs/DEPLOIEMENT-RAILWAY.md](docs/DEPLOIEMENT-RAILWAY.md) | Mainteneurs | Déploiement par Git, variables (deux suffisent) |
+| [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) | Mainteneurs | DNS, cache, protection |
+| [docs/SAUVEGARDE-RESTAURATION.md](docs/SAUVEGARDE-RESTAURATION.md) | Mainteneurs | Sauvegardes et test de restauration |
+| [docs/FEUILLE-DE-ROUTE.md](docs/FEUILLE-DE-ROUTE.md) | Contributeurs | Chantiers ouverts et sujets pour débuter |
+
+## Contribuer
+
+Les contributions sont les bienvenues : corrections, améliorations, traductions, tests. Commencez par [CONTRIBUTING.md](CONTRIBUTING.md), puis choisissez un chantier dans la [feuille de route](docs/FEUILLE-DE-ROUTE.md) ou ouvrez une issue.
+
+- Charte de conduite : [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Faille de sécurité : [SECURITY.md](SECURITY.md), jamais en issue publique
+- Chaque pull request est relue par un mainteneur ; une fusion sur `main` déploie la production.
 
 ## Intégration continue
 
-`.github/workflows/ci.yml` lance la vérification de syntaxe et les tests sur PostgreSQL 16 à chaque push et pull request.
-
-## Prochaines étapes
-
-Paiement en ligne automatique (FedaPay, CinetPay ou PayGate, via l'interface `PaymentProvider`), voix plus naturelle (fournisseur vocal dédié via `OCDVoice`), notifications WhatsApp, authentification à deux facteurs pour l'équipe.
+`.github/workflows/ci.yml` lance `npm run check` (syntaxe) et `npm test` sur PostgreSQL 16 à chaque push et pull request.

@@ -1,0 +1,54 @@
+name: Signaler un bug
+description: Quelque chose ne fonctionne pas comme prévu sur le site ou dans l'espace équipe.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce problème.
+        **N'indiquez aucune donnée réelle de client** (nom, téléphone, email). Pour une faille de sécurité, suivez SECURITY.md au lieu d'ouvrir une issue.
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Que se passe-t-il ?
+      description: Décrivez le problème en quelques phrases.
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Comment le reproduire ?
+      placeholder: |
+        1. Ouvrir l'accueil
+        2. Choisir « Live à distance »
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Que devrait-il se passer ?
+    validations:
+      required: true
+  - type: dropdown
+    id: zone
+    attributes:
+      label: Où ?
+      options:
+        - Parcours de réservation
+        - Réceptionniste IA
+        - Paiement
+        - Espace équipe
+        - Autre
+    validations:
+      required: true
+  - type: input
+    id: appareil
+    attributes:
+      label: Appareil et navigateur
+      placeholder: "Ex. : Android, Chrome 130 / iPhone, Safari"
+  - type: textarea
+    id: captures
+    attributes:
+      label: Captures d'écran
+      description: Floutez toute information personnelle.
