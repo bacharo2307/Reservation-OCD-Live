@@ -14,6 +14,10 @@ async function main() {
   if (process.env.MIGRATE_ON_BOOT !== 'false') await migrate();
   const admin = await bootstrapAdmin();
   if (admin) log.info('super administrateur créé', { email: admin.email });
+  if (process.env.DEMO_SEED === 'true') {
+    const added = await require('./scripts/demo-data').seedIfEmpty().catch((err) => log.warn('données de démo non ajoutées', { err: err.message }));
+    if (added) log.info('données de démonstration ajoutées');
+  }
 
   const app = createApp();
   const server = app.listen(config.port, () => {

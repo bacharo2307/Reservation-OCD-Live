@@ -58,7 +58,19 @@ async function reset() {
   console.log(`${r} réservations de démonstration supprimées.`);
 }
 
-const cmd = process.argv[2];
-(cmd === 'seed' ? seed() : cmd === 'reset' ? reset() : Promise.reject(new Error('Usage : demo-data.js seed|reset')))
-  .then(() => db.close())
-  .catch(async (err) => { console.error(err.message); await db.close(); process.exit(1); });
+// Au démarrage du serveur (DEMO_SEED=true) : ajoute les données une seule fois.
+async function seedIfEmpty() {
+  const { rows } = await db.query('SELECT count(*)::int AS n FROM bookings WHERE is_demo');
+  if (rows[0].n > 0) return false;
+  await seed();
+  return true;
+}
+
+module.exports = { seed, reset, seedIfEmpty };
+
+if (require.main === module) {
+  const cmd = process.argv[2];
+  (cmd === 'seed' ? seed() : cmd === 'reset' ? reset() : Promise.reject(new Error('Usage : demo-data.js seed|reset')))
+    .then(() => db.close())
+    .catch(async (err) => { console.error(err.message); await db.close(); process.exit(1); });
+}

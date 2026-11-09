@@ -59,5 +59,9 @@ Petite installation : on peut se passer de ce service avec `RUN_WORKER_IN_WEB=tr
 
 ## 6. Données de démonstration
 
-- Ajouter : `railway run npm run seed:demo` (depuis un poste lié au projet avec `railway link`).
-- **Avant l'ouverture** : `railway run npm run demo:reset`.
+- Ajouter : variable `DEMO_SEED=true` sur le service web. Au démarrage, 8 réservations d'exemple sont créées si elles n'existent pas déjà.
+- **Avant l'ouverture au public** : retirer `DEMO_SEED`, puis lancer `npm run demo:reset` dans le conteneur (`railway ssh -s web -- npm run demo:reset`, après `railway ssh keys add`). Repasser aussi `PAYMENT_PROVIDER=manual` et supprimer `ALLOW_DEMO_PAYMENTS`.
+
+## 7. Intégration continue et « Wait for CI »
+
+Activer **Wait for CI** seulement quand GitHub Actions fonctionne sur le compte. Tant que la CI ne peut pas démarrer (par exemple un compte GitHub bloqué pour facturation), cette option empêcherait tout déploiement.
