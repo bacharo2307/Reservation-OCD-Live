@@ -7,9 +7,16 @@ Le déploiement passe uniquement par Git : un `git push` sur la branche `main` d
 | Variable | Valeur | Obligatoire |
 | --- | --- | --- |
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | oui |
-| `ANTHROPIC_API_KEY` | clé de l'API Claude | pour la réceptionniste IA |
+| `GEMINI_API_KEY` | clé gratuite Google AI Studio ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) | pour la réceptionniste IA |
+| `ANTHROPIC_API_KEY` | clé de l'API Claude (payante) | facultatif, à la place de Gemini |
 | `RESEND_API_KEY` | clé Resend | pour envoyer les emails |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | premier compte de l'espace équipe | seulement au tout premier démarrage |
+
+Réceptionniste IA : avec `GEMINI_API_KEY`, elle utilise Google Gemini (`gemini-3.5-flash-lite`, offre gratuite). Avec seulement `ANTHROPIC_API_KEY`, elle utilise Claude. `AI_PROVIDER=gemini` ou `claude` force le choix ; `GEMINI_MODEL` change de modèle (par exemple `gemini-3.8-flash`, plus capable mais plus lent).
+
+**Offre gratuite Gemini, à savoir :**
+- Google peut utiliser le contenu des conversations pour améliorer ses produits. Les conversations contiennent des noms et des numéros WhatsApp de clients : pour un usage durable, passez la clé en facturation payante (Google AI Studio → Billing), qui exclut cette utilisation.
+- Les quotas gratuits (requêtes par minute et par jour) sont limités ; une réservation complète demande plusieurs dizaines d'appels. Quand le quota est atteint, la réceptionniste l'annonce et propose le formulaire, qui reste toujours disponible. Quotas actuels : [aistudio.google.com/rate-limit](https://aistudio.google.com/rate-limit).
 
 Tout le reste est automatique :
 - le secret de signature est généré au premier démarrage et gardé en base ;

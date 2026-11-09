@@ -39,7 +39,7 @@ npm run seed:demo           # réservations d'exemple, en local seulement
 npm run dev                 # http://localhost:3000 et http://localhost:3000/admin/
 ```
 
-En local, `PAYMENT_PROVIDER=demo` simule les paiements. La réceptionniste IA demande une clé `ANTHROPIC_API_KEY` ; sans clé, son bouton n'apparaît pas et le reste du site fonctionne.
+En local, `PAYMENT_PROVIDER=demo` simule les paiements. La réceptionniste IA demande une clé `GEMINI_API_KEY` (gratuite sur https://aistudio.google.com/apikey) ou `ANTHROPIC_API_KEY` ; sans clé, son bouton n'apparaît pas et le reste du site fonctionne.
 
 ## Proposer une modification
 
@@ -70,7 +70,7 @@ En local, `PAYMENT_PROVIDER=demo` simule les paiements. La réceptionniste IA de
 - Accessibilité : vrais boutons, champs avec `label`, contraste suffisant, animations coupées avec `prefers-reduced-motion`.
 - Le logo officiel se dépose dans `public/brand/` ; n'inventez pas de logo.
 
-**Réceptionniste IA** (`src/services/ai/receptionist.js`)
+**Réceptionniste IA** (`src/services/ai/receptionist.js`, fournisseurs Gemini et Claude dans `src/services/ai/providers.js`)
 - Les règles de réservation sont imposées dans le code des outils, pas seulement dans les consignes.
 - Les tests utilisent un faux modèle (`tests/ai.test.js`) : aucun appel réel à l'API pendant les tests.
 

@@ -59,7 +59,7 @@ router.get('/config', wrap(async (req, res) => {
     studio: s.studio,
     booking: { holdMin: s.booking.holdMin, paymentTimeoutMin: s.booking.paymentTimeoutMin, launchDate: s.booking.launchDate, horizonDays: s.booking.horizonDays, leadMin: s.booking.leadMin },
     payment: { provider: provider.name, live: provider.live, methods: payments.METHODS },
-    voice: { enabled: await ai.enabled(), whatsapp: String((s.contact || {}).whatsapp || '').replace(/[^\d+]/g, '') || null },
+    voice: { enabled: await ai.enabled(), provider: ai.providerLabel(), whatsapp: String((s.contact || {}).whatsapp || '').replace(/[^\d+]/g, '') || null },
     countries: COUNTRIES.map(([name, tz]) => ({ name, tz })),
     sectors: SECTORS,
     serverTime: new Date().toISOString(),

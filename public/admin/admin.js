@@ -270,7 +270,7 @@
       num('bk', 'leadMin', 'Délai minimum avant un live (min)', s.booking.leadMin, 0, 2880) + num('bk', 'horizonDays', 'Réservable jusqu’à (jours)', s.booking.horizonDays, 7, 365) +
       '<div class="field"><label for="bk-launch">Date d’ouverture des lives</label><input id="bk-launch" name="launchDate" type="date" value="' + esc(s.booking.launchDate) + '" required></div>' +
       '</div><button class="btn btn-primary" type="submit">Enregistrer</button></form>' +
-      '<form class="glass form" id="set-voice" data-key="voice"><h3>Réceptionniste IA</h3><label class="check"><input type="checkbox" name="enabled"' + (s.voice.enabled ? ' checked' : '') + '><span>Proposer la réceptionniste IA sur le site (nécessite la clé ANTHROPIC_API_KEY sur Railway)</span></label>' +
+      '<form class="glass form" id="set-voice" data-key="voice"><h3>Réceptionniste IA</h3><label class="check"><input type="checkbox" name="enabled"' + (s.voice.enabled ? ' checked' : '') + '><span>Proposer la réceptionniste IA sur le site (nécessite la clé GEMINI_API_KEY, gratuite, ou ANTHROPIC_API_KEY sur Railway)</span></label>' +
       '<button class="btn btn-primary" type="submit">Enregistrer</button></form></div>';
   };
 

@@ -1,5 +1,5 @@
 'use strict';
-// Réceptionniste IA d'OCD LIVE (Claude, via le SDK officiel Anthropic).
+// Réceptionniste IA d'OCD LIVE (Google Gemini ou Anthropic Claude, voir providers.js).
 // Le modèle converse ; le moteur de réservation décide. Aucune réservation n'est retenue,
 // enregistrée ou confirmée sans un appel d'outil réussi côté serveur.
 
@@ -14,22 +14,16 @@ const { dayStart, fmtDay, fmtDayYear, fmtTime, fmtPrice, fmtDuration, isDateStr 
 const av = require('../availability');
 const booking = require('../booking');
 
-// ---------- Client Claude ----------
-let client = null;
-function getClient() {
-  if (!client) {
-    const mod = require('@anthropic-ai/sdk');
-    const Anthropic = mod.Anthropic || mod.default || mod;
-    client = new Anthropic({ apiKey: config.ai.apiKey, maxRetries: 2, timeout: 45000 });
-  }
-  return client;
-}
-// Pour les tests : remplacer le client par un faux.
-function setClient(c) { client = c; }
+const providers = require('./providers');
+
+// Pour les tests : remplacer les clients par des faux.
+const setClient = providers.setClaudeClient;
+const setGeminiFetch = providers.setGeminiFetch;
 
 const whatsapp = async () => String(((await getSettings()).contact || {}).whatsapp || '').replace(/[^\d+]/g, '');
 
-const enabled = async () => Boolean((config.ai.apiKey || client) && (await getSettings()).voice.enabled);
+const enabled = async () => Boolean(providers.activeName() && (await getSettings()).voice.enabled);
+const providerLabel = () => (providers.activeName() ? providers.labels[providers.activeName()] : null);
 
 // Limite d'appels simultanés au fournisseur IA (par instance).
 let running = 0;
@@ -369,53 +363,41 @@ async function runTool(name, input, ctx) {
 }
 
 // ---------- Boucle de conversation ----------
-const FALLBACK_MODELS = new Set(['claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-sonnet-5-5']);
-
-async function callModel(messages) {
-  const params = {
-    model: config.ai.model,
-    max_tokens: 4096,
-    output_config: { effort: config.ai.effort },
-    cache_control: { type: 'ephemeral' }, // met en cache l'historique déjà envoyé
-    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-    tools: TOOLS,
-    messages,
-  };
-  // Repli automatique côté serveur si le modèle refuse une demande (modèles compatibles).
-  if (FALLBACK_MODELS.has(config.ai.model)) {
-    params.betas = ['server-side-fallback-2026-07-01'];
-    params.fallbacks = 'default';
-  }
-  return withSlot(() => getClient().beta.messages.create(params));
+// Le fournisseur est fixé à l'ouverture de la conversation (l'historique est dans son format).
+function providerFor(state) {
+  const p = providers.create(state.provider, { systemPrompt: SYSTEM_PROMPT, tools: TOOLS });
+  if (!p) throw gone('ended', 'Cette conversation ne peut plus continuer. Rouvrez la réceptionniste ou utilisez le formulaire.');
+  return p;
 }
 
-async function converse(messages, ctx) {
+async function converse(history, ctx) {
+  const p = providerFor(ctx.state);
   const texts = [];
   let action = null;
   for (let i = 0; i < 8; i++) {
-    let resp;
+    let r;
     try {
-      resp = await callModel(messages);
+      r = await withSlot(() => p.step(history));
     } catch (e) {
       if (e instanceof AppError) throw e;
-      log.error('appel IA en échec', { status: e.status, err: e.message });
+      log.error('appel IA en échec', { provider: p.name, status: e.status, err: e.message });
+      if (e.status === 429) throw new AppError(503, 'ai_busy', 'La réceptionniste est très demandée en ce moment. Réessayez dans une minute ou continuez avec le formulaire.');
       throw new AppError(503, 'ai_unavailable', 'La réceptionniste est momentanément indisponible. Vous pouvez continuer avec le formulaire.');
     }
-    messages.push({ role: 'assistant', content: resp.content }); // ajout tel quel (blocs de réflexion compris)
-    for (const block of resp.content) if (block.type === 'text' && block.text.trim()) texts.push(block.text.trim());
-    if (resp.stop_reason === 'refusal') {
+    texts.push(...r.texts);
+    if (r.refusal) {
       texts.length = 0;
       texts.push('Je ne peux pas vous aider sur ce point. Voulez-vous que nous revenions à votre réservation ?');
       break;
     }
-    if (resp.stop_reason !== 'tool_use') break;
+    if (!r.calls.length) break;
     const results = [];
-    for (const use of resp.content.filter((b) => b.type === 'tool_use')) {
-      const r = await runTool(use.name, use.input, ctx);
-      if (r.action) action = r.action;
-      results.push({ type: 'tool_result', tool_use_id: use.id, content: JSON.stringify(r.result), ...(r.error ? { is_error: true } : {}) });
+    for (const call of r.calls) {
+      const out = await runTool(call.name, call.input, ctx);
+      if (out.action) action = out.action;
+      results.push({ id: call.id, name: call.name, result: out.result, error: out.error });
     }
-    messages.push({ role: 'user', content: results });
+    p.addResults(history, results);
   }
   return { reply: texts.join(' ').trim() || 'Pardon, pouvez-vous répéter ?', action };
 }
@@ -454,8 +436,8 @@ async function createSession({ channel, ip }) {
   const s = await getSettings();
   const now = Date.now();
   const context = `[Nouvelle conversation. Nous sommes le ${fmtDayYear(now)}, il est ${fmtTime(now)} à Lomé. Les lives OCD commencent le ${fmtDayYear(dayStart(s.booking.launchDate))}. Le client vient d’ouvrir la réceptionniste ${channel === 'voice' ? 'vocale' : 'écrite'} sur le site. Accueille-le en une ou deux phrases et demande-lui comment tu peux l’aider.]`;
-  const messages = [{ role: 'user', content: context }];
-  const state = { channel: channel === 'voice' ? 'voice' : 'text' };
+  const state = { channel: channel === 'voice' ? 'voice' : 'text', provider: providers.activeName() };
+  const messages = providerFor(state).start(context);
   const { reply } = await converse(messages, { state });
   const transcript = [{ role: 'assistant', text: reply }];
   const { rows } = await db.query(
@@ -483,7 +465,8 @@ async function sendMessage(id, text) {
     if (s.turns >= config.ai.maxTurns) throw gone('too_long', 'Cette conversation est très longue : continuez avec le formulaire, vos informations sont conservées.');
     const messages = s.messages;
     const state = s.state || {};
-    messages.push({ role: 'user', content: clean });
+    if (!state.provider) state.provider = 'claude'; // conversations ouvertes avant l'arrivée de Gemini
+    providerFor(state).addUser(messages, clean);
     const { reply, action } = await converse(messages, { state, sessionId: id });
     const transcript = [...s.transcript, { role: 'user', text: clean }, { role: 'assistant', text: reply }];
     const payload = await actionPayload(action, state);
@@ -507,4 +490,4 @@ async function endSession(id, { keepHold } = {}) {
   return { ok: true, handoff: keepHold ? await actionPayload({ type: 'form' }, st) : null };
 }
 
-module.exports = { SYSTEM_PROMPT, TOOLS, TOOL_HANDLERS, runTool, createSession, sendMessage, endSession, enabled, setClient, publicState };
+module.exports = { SYSTEM_PROMPT, TOOLS, TOOL_HANDLERS, runTool, createSession, sendMessage, endSession, enabled, providerLabel, setClient, setGeminiFetch, publicState };

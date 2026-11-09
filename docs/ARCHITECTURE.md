@@ -65,12 +65,16 @@ Parcours (CLAUDE.md, partie 3.3) : le client choisit → le serveur vérifie et 
 ## Réceptionniste IA (`src/services/ai/`, `public/voice.js`)
 
 - **Voix** : reconnaissance et synthèse vocales du navigateur (Web Speech API), derrière l'objet `OCDVoice` (VoiceProvider) remplaçable par un fournisseur dédié. Aucun audio n'est envoyé à nos serveurs ni conservé ; seul le texte de la conversation est gardé 24 heures (`ai_sessions`).
-- **Modèle** : Claude Opus 5.5 (`claude-opus-5-5`) via le SDK officiel `@anthropic-ai/sdk`, effort `low` pour répondre vite à l'oral. Repli automatique côté serveur en cas de refus (`fallbacks: "default"`). Consignes et outils mis en cache (prompt caching). Historique en ajout seul.
+- **Modèle** (`src/services/ai/providers.js`, même contrat pour les deux) :
+  - **Google Gemini** (par défaut dès qu'une clé `GEMINI_API_KEY` existe) : Interactions API (`POST /v1beta/interactions`), mode sans état (`store: false`), modèle `gemini-3.5-flash-lite` (offre gratuite), réflexion `minimal` pour répondre vite. Les étapes du modèle (réflexion signée, appels d'outils) sont renvoyées telles quelles à chaque tour ; les résultats d'outils sont des étapes `function_result` reliées par `call_id`.
+  - **Anthropic Claude** : Claude Opus 5.5 (`claude-opus-5-5`) via le SDK officiel `@anthropic-ai/sdk`, effort `low`, repli automatique en cas de refus (`fallbacks: "default"`), consignes et outils mis en cache.
+  - Le fournisseur est fixé à l'ouverture de chaque conversation et l'historique est gardé dans son format, en ajout seul.
 - **Outils** : `list_packages`, `check_availability`, `hold_slot`, `note_customer_info`, `save_customer_info`, `get_summary`, `confirm_booking`, `handoff_to_form`, `request_human`. Ils appellent le même moteur que le formulaire.
 - **Règles imposées par le serveur** (le modèle ne peut pas les contourner) : pas de confirmation sans créneau retenu, fiche entièrement confirmée et enregistrée, récapitulatif relu après la dernière modification, et « oui » explicite. Une information non confirmée reste marquée comme telle.
 - Après confirmation, le client passe à l'écran de paiement du parcours normal. « Formulaire » reprend le parcours avec les informations déjà recueillies et le créneau retenu.
 - Limites : appels simultanés au modèle plafonnés par instance, un message à la fois par conversation, 60 échanges maximum, limitation par adresse IP.
-- Sans `ANTHROPIC_API_KEY`, ou si l'équipe la désactive dans les réglages, le bouton disparaît.
+- Sans clé (`GEMINI_API_KEY` ou `ANTHROPIC_API_KEY`), ou si l'équipe la désactive dans les réglages, le bouton disparaît. Le client voit quel service d'IA traite la conversation.
+- Quota atteint chez le fournisseur (HTTP 429) : message clair et renvoi vers le formulaire.
 
 ## Notifications
 

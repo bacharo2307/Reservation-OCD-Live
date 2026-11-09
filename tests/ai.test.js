@@ -161,6 +161,62 @@ test('un seul message traité à la fois par conversation', async () => {
   assert.deepEqual(statuses, ['busy', 'ok']);
 });
 
+test('Gemini (offre gratuite) : format Interactions API, outils, signatures conservées', async () => {
+  const config = require('../src/config');
+  const bodies = [];
+  const replies = [
+    { status: 'completed', steps: [{ type: 'thought', signature: 'sig-1' }, { type: 'model_output', content: [{ type: 'text', text: 'Bonjour ! Que vendez-vous ?' }] }] },
+    { status: 'completed', steps: [{ type: 'thought', signature: 'sig-2' }, { type: 'function_call', id: 'fc_1', name: 'check_availability', arguments: { mode: 'presentiel', package_id: 'decouverte', date: day(), time: '16:00' } }] },
+    { status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Le créneau de 16 heures est libre.' }] }] },
+  ];
+  ai.setGeminiFetch(async (url, init) => {
+    bodies.push({ url, headers: init.headers, body: JSON.parse(init.body) });
+    return { ok: true, status: 200, text: async () => JSON.stringify(replies.shift()) };
+  });
+  config.ai.provider = 'gemini';
+  try {
+    const s = await ai.createSession({ channel: 'voice' });
+    assert.equal(s.reply, 'Bonjour ! Que vendez-vous ?');
+    const r = await ai.sendMessage(s.id, 'Un live Découverte à 16h');
+    assert.equal(r.reply, 'Le créneau de 16 heures est libre.');
+
+    const first = bodies[0];
+    assert.equal(first.url, 'https://generativelanguage.googleapis.com/v1beta/interactions');
+    assert.equal(first.body.model, 'gemini-3.5-flash-lite');
+    assert.equal(first.body.store, false);
+    assert.equal(first.body.generation_config.thinking_level, 'minimal');
+    assert.match(first.body.system_instruction, /réceptionniste d'OCD LIVE/);
+    assert.equal(first.body.tools.length, 9);
+    assert.ok(first.body.tools.every((t) => t.type === 'function' && !JSON.stringify(t).includes('additionalProperties')));
+    assert.ok(first.headers['x-goog-api-key'] !== undefined);
+
+    // Dernier appel : historique complet, étapes du modèle renvoyées telles quelles, résultat d'outil relié à l'appel.
+    const input = bodies[2].body.input;
+    assert.deepEqual(input.map((x) => x.type), ['user_input', 'thought', 'model_output', 'user_input', 'thought', 'function_call', 'function_result']);
+    assert.equal(input[4].signature, 'sig-2');
+    assert.equal(input[6].call_id, 'fc_1');
+    assert.equal(input[6].name, 'check_availability');
+    assert.equal(JSON.parse(input[6].result[0].text).available, true);
+    const { rows } = await pool.query('SELECT state FROM ai_sessions WHERE id = $1', [s.id]);
+    assert.equal(rows[0].state.provider, 'gemini');
+  } finally {
+    config.ai.provider = '';
+    ai.setGeminiFetch(null);
+  }
+});
+
+test('Gemini saturé (quota gratuit) : message clair, la conversation reste utilisable', async () => {
+  const config = require('../src/config');
+  ai.setGeminiFetch(async () => ({ ok: false, status: 429, text: async () => '{"error":{"code":429}}' }));
+  config.ai.provider = 'gemini';
+  try {
+    await assert.rejects(ai.createSession({ channel: 'text' }), (e) => e.status === 503 && /très demandée/.test(e.message));
+  } finally {
+    config.ai.provider = '';
+    ai.setGeminiFetch(null);
+  }
+});
+
 test('demande d’un humain : l’équipe est prévenue', async () => {
   const state = { fields: { name: { value: 'Awa', confirmed: true }, phone: { value: '+228 90 00 00 01', confirmed: true } } };
   const r = await run('request_human', { reason: 'question sur le paiement' }, state);

@@ -49,6 +49,11 @@ module.exports = {
   },
 
   ai: {
+    // gemini | claude ; vide = Gemini (gratuit) s'il a une clé, sinon Claude.
+    provider: (env.AI_PROVIDER || '').toLowerCase(),
+    geminiKey: env.GEMINI_API_KEY || '',
+    geminiModel: env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+    geminiThinking: ['minimal', 'low', 'medium', 'high'].includes(env.GEMINI_THINKING) ? env.GEMINI_THINKING : '',
     apiKey: env.ANTHROPIC_API_KEY || '',
     model: env.AI_MODEL || 'claude-opus-5-5',
     effort: ['low', 'medium', 'high'].includes(env.AI_EFFORT) ? env.AI_EFFORT : 'low',

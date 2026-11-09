@@ -3,7 +3,7 @@
 Application de réservation des lives commerciaux OCD (Opportunité C'est Dehors) : PWA mobile, réceptionniste IA, espace équipe. Hébergée sur Railway, déployée par `git push` sur `main`.
 
 - **Client** (`/`) : live en présentiel au studio de Lomé ou à distance → package → date → heure → informations → récapitulatif → paiement Mobile Money. Aucun compte à créer.
-- **Réceptionniste IA** : le client réserve en parlant (ou en écrivant). Elle fait confirmer chaque information, vérifie les créneaux réels, lit un récapitulatif et ne confirme qu'après un « oui » explicite. Le serveur impose ces règles.
+- **Réceptionniste IA** (Google Gemini gratuit, ou Claude) : le client réserve en parlant (ou en écrivant). Elle fait confirmer chaque information, vérifie les créneaux réels, lit un récapitulatif et ne confirme qu'après un « oui » explicite. Le serveur impose ces règles.
 - **Équipe** (`/admin/`) : tableau de bord, notifications, réservations (confirmer un paiement, annuler, reporter, changer d'assistante), packages, assistantes, jours bloqués, clients, paiements, journal, utilisateurs, réglages.
 - **Garantie** : aucune double réservation. PostgreSQL refuse tout chevauchement sur une même ressource (contrainte d'exclusion `tstzrange` + GiST), testé avec 100 requêtes simultanées.
 
@@ -13,7 +13,7 @@ Prérequis : Node.js 20+ et PostgreSQL 14+.
 
 ```bash
 npm install
-cp .env.example .env        # DATABASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD ; ANTHROPIC_API_KEY pour l'IA
+cp .env.example .env        # DATABASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD ; GEMINI_API_KEY (gratuite) pour l’IA
 npm run migrate
 npm run seed:demo           # facultatif, en local : 8 réservations d'exemple
 npm run dev                 # http://localhost:3000  et  http://localhost:3000/admin/

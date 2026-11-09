@@ -601,7 +601,7 @@
         (V.canListen ? '<button class="btn btn-primary btn-block" data-a="ai-start-voice"' + (AI.busy ? ' disabled' : '') + '>' + icon('mic', 18) + 'Autoriser le micro et commencer</button>'
           : '<p class="small muted">La voix n’est pas disponible sur ce navigateur : vous pouvez écrire.</p>') +
         '<button class="btn btn-ghost btn-block" data-a="ai-start-text"' + (AI.busy ? ' disabled' : '') + '>Écrire plutôt</button>' +
-        '<p class="small muted">Aucun enregistrement audio n’est conservé.</p></div></div>';
+        '<p class="small muted">' + (S.cfg.voice.provider ? 'Le texte de la conversation est traité par ' + esc(S.cfg.voice.provider) + '. ' : '') + 'Aucun enregistrement audio n’est conservé.</p></div></div>';
     } else {
       html += '<p class="ai-live" id="ai-live" aria-live="polite">' + esc(AI.live) + '</p></div>';
       if (AI.fiche.length) {
