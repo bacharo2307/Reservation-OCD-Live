@@ -58,7 +58,7 @@ async function reset() {
   console.log(`${r} réservations de démonstration supprimées.`);
 }
 
-// Au démarrage du serveur (DEMO_SEED=true) : ajoute les données une seule fois.
+// Ajoute les données seulement si aucune donnée de démonstration n'existe (poste local).
 async function seedIfEmpty() {
   const { rows } = await db.query('SELECT count(*)::int AS n FROM bookings WHERE is_demo');
   if (rows[0].n > 0) return false;

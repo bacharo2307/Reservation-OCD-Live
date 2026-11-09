@@ -9,6 +9,7 @@ const config = require('./config');
 const log = require('./lib/log');
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
+const aiRoutes = require('./routes/ai').router;
 
 const PUBLIC = path.join(__dirname, '..', 'public');
 
@@ -62,6 +63,7 @@ function createApp() {
 
   app.use('/api', express.json({ limit: '32kb', verify: (req, res, buf) => { req.rawBody = buf; } }));
   app.use('/api/admin', adminRoutes);
+  app.use('/api/ai', aiRoutes);
   app.use('/api', publicRoutes);
   app.use('/api', (req, res) => res.status(404).json({ error: { code: 'not_found', message: 'Route inconnue.' } }));
 

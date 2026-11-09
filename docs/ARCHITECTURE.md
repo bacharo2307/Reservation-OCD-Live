@@ -56,10 +56,21 @@ Parcours (CLAUDE.md, partie 3.3) : le client choisit → le serveur vérifie et 
 
 - Interface `PaymentProvider` : `create`, `verifyWebhook`, `parseWebhook`.
 - `manual` (production v1) : instructions Mobile Money ; l'équipe clique « Paiement reçu ».
-- `demo` : simulation, passe par le même chemin signé qu'un vrai webhook. Refusé en production sans `ALLOW_DEMO_PAYMENTS=true`.
+- `demo` : simulation pour le développement et les tests, par le même chemin signé qu'un vrai webhook. Jamais actif en production.
+- Numéro Mobile Money et nom du bénéficiaire : espace équipe → Réglages.
 - Un seul paiement ouvert et un seul paiement réussi par réservation (index uniques partiels). Webhooks dédupliqués par `event_id`, signature vérifiée, montant contrôlé. La redirection du navigateur n'est jamais une preuve de paiement.
 - Paiement reçu après expiration : on récupère le créneau s'il est libre, sinon l'équipe est alertée (`late_payment`).
 - Ajouter FedaPay / CinetPay / PayGate = un nouveau fichier fournisseur, sans toucher au moteur.
+
+## Réceptionniste IA (`src/services/ai/`, `public/voice.js`)
+
+- **Voix** : reconnaissance et synthèse vocales du navigateur (Web Speech API), derrière l'objet `OCDVoice` (VoiceProvider) remplaçable par un fournisseur dédié. Aucun audio n'est envoyé à nos serveurs ni conservé ; seul le texte de la conversation est gardé 24 heures (`ai_sessions`).
+- **Modèle** : Claude Opus 5.5 (`claude-opus-5-5`) via le SDK officiel `@anthropic-ai/sdk`, effort `low` pour répondre vite à l'oral. Repli automatique côté serveur en cas de refus (`fallbacks: "default"`). Consignes et outils mis en cache (prompt caching). Historique en ajout seul.
+- **Outils** : `list_packages`, `check_availability`, `hold_slot`, `note_customer_info`, `save_customer_info`, `get_summary`, `confirm_booking`, `handoff_to_form`, `request_human`. Ils appellent le même moteur que le formulaire.
+- **Règles imposées par le serveur** (le modèle ne peut pas les contourner) : pas de confirmation sans créneau retenu, fiche entièrement confirmée et enregistrée, récapitulatif relu après la dernière modification, et « oui » explicite. Une information non confirmée reste marquée comme telle.
+- Après confirmation, le client passe à l'écran de paiement du parcours normal. « Formulaire » reprend le parcours avec les informations déjà recueillies et le créneau retenu.
+- Limites : appels simultanés au modèle plafonnés par instance, un message à la fois par conversation, 60 échanges maximum, limitation par adresse IP.
+- Sans `ANTHROPIC_API_KEY`, ou si l'équipe la désactive dans les réglages, le bouton disparaît.
 
 ## Notifications
 
@@ -83,7 +94,7 @@ Les emails (équipe et client) partent de la table `jobs`, traitée par le worke
 - PWA sans framework ni étape de compilation : légère sur les Android modestes.
 - Fichiers versionnés `?v=<commit>` : cache CDN long et sûr. Le service worker ne met jamais en cache `/api` ni `/admin`.
 - Heure de Lomé (GMT) comme référence ; heure locale du client affichée si différente.
-- Marque centralisée : réglage `brand` (nom, slogan, compte de diffusion, logo) et variables CSS dans `public/styles.css`. Le wordmark « OCD LIVE » est provisoire, à remplacer par le logo officiel (`brand.logoUrl`, `public/icons/`).
+- Marque centralisée : réglage `brand` (nom, slogan, compte de diffusion, logo) et variables CSS dans `public/styles.css`. Le wordmark « OCD LIVE » est provisoire : déposer le logo officiel dans `public/brand/` (`logo.svg`, `logo.png` ou `logo.webp`) suffit à l'afficher sur le site et dans l'espace équipe. Les icônes d'installation sont dans `public/icons/`.
 
 ## Tests (`npm test`)
 

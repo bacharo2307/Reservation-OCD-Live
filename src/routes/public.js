@@ -1,8 +1,11 @@
 'use strict';
 // API publique (parcours client). Aucun compte requis : chaque réservation est protégée par son jeton.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const express = require('express');
 const db = require('../db');
+const ai = require('../services/ai/receptionist');
 const config = require('../config');
 const { getSettings } = require('../lib/settings');
 const { COUNTRIES, SECTORS, isUuid } = require('../lib/validate');
@@ -39,15 +42,24 @@ router.get('/health', wrap(async (req, res) => {
   res.json({ status: 'ok', db: 'ok', version: config.appVersion, time: new Date().toISOString() });
 }));
 
+// Logo officiel : déposer public/brand/logo.svg (ou .png / .webp) suffit à l'afficher partout.
+const BRAND_DIR = path.join(__dirname, '..', '..', 'public', 'brand');
+function brandLogo() {
+  for (const f of ['logo.svg', 'logo.png', 'logo.webp']) {
+    if (fs.existsSync(path.join(BRAND_DIR, f))) return '/brand/' + f + '?v=' + config.appVersion;
+  }
+  return '';
+}
+
 router.get('/config', wrap(async (req, res) => {
   const s = await getSettings();
   const provider = providers.current();
   res.json({
-    brand: s.brand,
+    brand: { ...s.brand, logoUrl: s.brand.logoUrl || brandLogo() },
     studio: s.studio,
     booking: { holdMin: s.booking.holdMin, paymentTimeoutMin: s.booking.paymentTimeoutMin, launchDate: s.booking.launchDate, horizonDays: s.booking.horizonDays, leadMin: s.booking.leadMin },
     payment: { provider: provider.name, live: provider.live, methods: payments.METHODS },
-    voice: { enabled: Boolean(s.voice && s.voice.enabled) },
+    voice: { enabled: await ai.enabled(), whatsapp: String((s.contact || {}).whatsapp || '').replace(/[^\d+]/g, '') || null },
     countries: COUNTRIES.map(([name, tz]) => ({ name, tz })),
     sectors: SECTORS,
     serverTime: new Date().toISOString(),

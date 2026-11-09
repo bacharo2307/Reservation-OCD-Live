@@ -10,8 +10,8 @@
 
   var STEPS = ['Mode de participation', 'Votre package', 'Votre date', 'Votre horaire', 'Vos informations', 'Récapitulatif', 'Paiement'];
   var MODES = {
-    presentiel: { label: 'Présentiel', long: 'Live en présentiel', icon: 'studio', desc: 'Venez au studio OCD de Lomé avec vos produits. Notre régie dirige votre live pendant que vous vendez.' },
-    distance: { label: 'À distance', long: 'Live à distance', icon: 'globe', desc: 'Restez dans votre boutique, chez vous ou dans votre entreprise, partout en Afrique et dans le monde. Une assistante OCD vous accompagne en direct.' },
+    presentiel: { label: 'Présentiel', long: 'Live en présentiel', icon: 'studio', desc: 'Au studio OCD de Lomé, avec notre régie.' },
+    distance: { label: 'À distance', long: 'Live à distance', icon: 'globe', desc: 'Depuis chez vous, partout dans le monde, avec une assistante OCD.' },
   };
   var METHODS = {
     mobile_money_tg: { name: 'Mobile Money Togo', desc: 'Flooz, T-Money', icon: 'phone' },
@@ -101,6 +101,7 @@
     $banner.innerHTML = S.cfg && S.cfg.payment.provider === 'demo'
       ? '<div class="banner">Mode démonstration : les paiements sont simulés, aucun argent n’est prélevé.</div>' : '';
     var html = '';
+    $app.className = 'wrap' + (S.view === 'home' ? ' home' : '');
     if (S.view === 'home') html = renderHome() + footer();
     else if (S.view === 'booking') html = renderBooking();
     else if (S.view === 'success') html = renderSuccess() + footer();
@@ -115,7 +116,7 @@
 
   function footer() {
     var b = S.cfg.brand;
-    return '<footer class="foot"><p>' + esc(b.slogan) + '</p><small>' + esc(b.org) + '</small></footer>';
+    return '<footer class="foot"><p>' + esc(b.slogan) + '</p><small>' + esc(b.org) + ' · <a href="/admin/">Espace équipe</a></small></footer>';
   }
 
   function minPrice(mode) {
@@ -125,23 +126,35 @@
 
   function modeCard(mode, selected) {
     var M = MODES[mode], mp = minPrice(mode);
-    return '<button class="glass mode-card' + (selected ? ' is-selected' : '') + '" data-a="mode" data-mode="' + mode + '">' +
-      '<span class="mode-icon">' + icon(M.icon, 26) + '</span>' +
-      '<span class="mode-body"><span class="mode-title">' + M.long + '</span><span class="mode-desc">' + M.desc + '</span>' +
-      (mp != null ? '<span class="mode-price">dès ' + F.price(mp) + '</span>' : '') + '</span>' +
-      '<span class="mode-arrow">' + icon('arrow', 20) + '</span></button>';
+    return '<button class="glass mode-card' + (mode === 'distance' ? ' alt' : '') + (selected ? ' is-selected' : '') + '" data-a="mode" data-mode="' + mode + '">' +
+      '<span class="mode-icon">' + icon(M.icon, 24) + '</span>' +
+      '<span class="mode-body"><span class="mode-title">' + M.long + '</span><span class="mode-desc">' + M.desc + '</span></span>' +
+      '<span class="mode-foot"><span class="mode-price">' + (mp != null ? '<small>dès </small>' + F.price(mp) : '') + '</span><span class="mode-arrow">' + icon('arrow', 16) + '</span></span></button>';
   }
 
+  var HEART = '<svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.2 5 6.8 5c2 0 3.5 1.1 5.2 3 1.7-1.9 3.2-3 5.2-3 3.6 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21Z"/></svg>';
+
   function renderHome() {
+    var b = S.cfg.brand;
     var launch = S.cfg.booking.launchDate;
     var today = new Date(now()).toISOString().slice(0, 10);
-    var eyebrow = launch > today ? 'Lancement le ' + F.dayYear(Date.parse(launch)) : 'Réservations ouvertes';
-    return '<section class="hero"><div class="eyebrow"><i class="live-dot"></i>' + esc(eyebrow) + '</div>' +
-      '<h1>Votre business mérite d’être vu.</h1>' +
-      '<p class="lead">Présentez vos produits et services à travers les Lives commerciaux OCD.</p></section>' +
-      '<div class="stack">' + modeCard('presentiel') + modeCard('distance') + '</div>' +
-      '<p class="note center" style="justify-content:center">' + icon('live', 16) + '<span>Tous les lives sont diffusés sur le compte <b>' + esc(S.cfg.brand.channel) + '</b>.</span></p>' +
-      '<button class="ai-link" data-a="voice">' + icon('mic', 18) + 'Parler à notre réceptionniste IA</button>';
+    var eyebrow = launch > today ? 'Lives à partir du ' + F.day(Date.parse(launch)) : 'Réservations ouvertes';
+    var ai = S.cfg.voice.enabled
+      ? '<button class="glass ai-cta" data-a="voice"><span class="orb-mini">' + icon('mic', 20) + '</span><span class="grow"><b>Réserver en parlant</b><small>Notre réceptionniste IA vérifie tout avec vous</small></span>' + icon('arrow', 18) + '</button>' : '';
+    var step = function (n, t, s) { return '<div class="step3"><span class="num">' + n + '</span><span><b>' + t + '</b><small>' + s + '</small></span></div>'; };
+    return '<section class="hero-grid"><div class="hero-copy">' +
+      '<span class="eyebrow"><i class="live-dot"></i>' + esc(eyebrow) + '</span>' +
+      '<h1>Votre business mérite d’être <span class="grad">vu</span>.</h1>' +
+      '<p class="lead">Réservez votre live commercial, au studio OCD de Lomé ou depuis chez vous, partout dans le monde.</p>' +
+      '<div class="choices">' + modeCard('presentiel') + modeCard('distance') + '</div>' + ai + '</div>' +
+      '<div class="hero-visual" aria-hidden="true"><div class="glass phone"><div class="screen">' +
+      '<div class="screen-top"><span class="live-pill"><i class="live-dot"></i>LIVE</span><span class="screen-handle">' + icon('live', 14) + esc(b.channel) + '</span></div>' +
+      '<div class="hearts">' + HEART + HEART + HEART + '</div>' +
+      '<div class="screen-card"><b>Votre produit ici</b><small>Présenté en direct à toute la communauté</small></div></div></div>' +
+      '<div class="glass float-chip c1"><span class="dot">' + icon('studio', 16) + '</span><span>Studio de Lomé<small>Régie incluse</small></span></div>' +
+      '<div class="glass float-chip c2"><span class="dot">' + icon('globe', 16) + '</span><span>À distance<small>Assistante OCD en direct</small></span></div></div></section>' +
+      '<section class="glass steps3">' + step(1, 'Choisissez votre live', 'Au studio ou à distance') + step(2, 'Réservez votre créneau', 'Date, heure, paiement Mobile Money') +
+      step(3, 'Vendez en direct', 'Sur le compte ' + esc(b.channel)) + '</section>';
   }
 
   function renderBooking() {
@@ -186,7 +199,7 @@
   }
 
   function stepMode() {
-    return '<div class="stack">' + modeCard('presentiel', S.d.mode === 'presentiel') + modeCard('distance', S.d.mode === 'distance') + '</div>';
+    return '<div class="choices" style="margin-top:0">' + modeCard('presentiel', S.d.mode === 'presentiel') + modeCard('distance', S.d.mode === 'distance') + '</div>';
   }
 
   function stepPackage() {
@@ -401,11 +414,22 @@
   var A = {
     home: function () { S.view = 'home'; render(); window.scrollTo(0, 0); },
     theme: function () { O.toggleTheme(); renderHeader(); },
-    voice: function () {
-      openSheet('<div class="sheet-head"><h2>Réceptionniste IA</h2><button class="iconbtn" data-a="close" aria-label="Fermer">' + icon('x', 20) + '</button></div>' +
-        '<p class="muted">Bientôt, vous pourrez réserver en parlant avec notre réceptionniste : elle vérifie chaque information avec vous, consulte les créneaux libres et récapitule tout avant de confirmer.</p>' +
-        '<p class="muted">En attendant, le formulaire ne prend que quelques minutes.</p>' +
-        '<button class="btn btn-primary btn-block" data-a="close">Réserver avec le formulaire</button>');
+    voice: function () { aiOpen(); },
+    'ai-start-voice': function () { aiStart('voice'); },
+    'ai-start-text': function () { aiStart('text'); },
+    'ai-close': function () { aiClose(false); },
+    'ai-mic': function () {
+      if (!AI || AI.busy) return;
+      if (AI.listening) { V.stopListening(); return; }
+      if (AI.speaking) { V.stopSpeaking(); AI.speaking = false; }
+      AI.mode = 'voice';
+      aiListen();
+    },
+    'ai-form': function () { aiHandoff(); },
+    'ai-human': function () {
+      if (!AI) return;
+      if (!AI.id) { AI.human = { whatsapp: S.cfg.voice.whatsapp }; aiRender(); return; }
+      aiSend('Je voudrais parler à une personne de l’équipe OCD.');
     },
     close: function () { $sheet.innerHTML = ''; },
     back: function () {
@@ -544,6 +568,180 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
 
+  // ---------- Réceptionniste IA ----------
+  // Le serveur décide (créneau, fiche, confirmation) ; l'écran affiche, parle et écoute.
+  var V = window.OCDVoice;
+  var $ai = document.getElementById('ai-root');
+  var AI = null;
+
+  function aiOpen() {
+    AI = { phase: 'intro', mode: V.canListen ? 'voice' : 'text', id: null, token: null, busy: false, listening: false, speaking: false, transcript: [], fiche: [], live: '', human: null };
+    aiRender();
+  }
+
+  function aiStatus() {
+    if (AI.phase === 'intro') return 'Réservez en parlant naturellement';
+    if (AI.busy) return 'Je vérifie…';
+    if (AI.speaking) return 'Je vous réponds…';
+    if (AI.listening) return 'Je vous écoute…';
+    return AI.mode === 'voice' ? 'Touchez le micro pour parler' : 'Écrivez votre message';
+  }
+
+  function aiRender() {
+    if (!AI) { $ai.innerHTML = ''; return; }
+    var prev = document.getElementById('ai-text');
+    var draft = prev ? prev.value : '';
+    var orb = AI.busy ? 'thinking' : AI.speaking ? 'speaking' : AI.listening ? 'listening' : 'idle';
+    var head = '<div class="ai-head"><div class="grow"><b>Réceptionniste OCD</b><small id="ai-status">' + esc(aiStatus()) + '</small></div>' +
+      (AI.listening ? '<span class="mic-on"><i></i>Micro actif</span>' : '') +
+      '<button class="iconbtn" data-a="ai-close" aria-label="Terminer la conversation">' + icon('x', 20) + '</button></div>';
+    var html = head + '<div class="ai-stage"><div class="orb" data-state="' + orb + '"></div>';
+    if (AI.phase === 'intro') {
+      html += '<p class="ai-live muted">Dites ce que vous vendez et quand vous voulez passer en live. Je vérifie chaque information avec vous et je ne confirme rien sans votre accord.</p><div class="ai-intro">' +
+        (V.canListen ? '<button class="btn btn-primary btn-block" data-a="ai-start-voice"' + (AI.busy ? ' disabled' : '') + '>' + icon('mic', 18) + 'Autoriser le micro et commencer</button>'
+          : '<p class="small muted">La voix n’est pas disponible sur ce navigateur : vous pouvez écrire.</p>') +
+        '<button class="btn btn-ghost btn-block" data-a="ai-start-text"' + (AI.busy ? ' disabled' : '') + '>Écrire plutôt</button>' +
+        '<p class="small muted">Aucun enregistrement audio n’est conservé.</p></div></div>';
+    } else {
+      html += '<p class="ai-live" id="ai-live" aria-live="polite">' + esc(AI.live) + '</p></div>';
+      if (AI.fiche.length) {
+        html += '<div class="fiche">' + AI.fiche.map(function (f) {
+          return '<span class="chip' + (f.confirmed ? '' : ' pending') + '" title="' + (f.confirmed ? 'Confirmé' : 'À confirmer') + '">' + (f.confirmed ? icon('check', 13) : '') + esc(f.label) + ' : ' + esc(f.value) + '</span>';
+        }).join('') + '</div>';
+      }
+      if (AI.human) {
+        var wa = AI.human.whatsapp || S.cfg.voice.whatsapp;
+        html += '<div class="glass human-card"><b>Parler à l’équipe OCD</b>' + (wa
+          ? '<a class="btn btn-primary btn-block" href="https://wa.me/' + esc(wa.replace(/\D/g, '')) + '" target="_blank" rel="noopener">Écrire sur WhatsApp</a>'
+          : '<span class="small muted">L’équipe a été prévenue et vous recontacte sur WhatsApp.</span>') + '</div>';
+      }
+      html += '<div class="ai-transcript" id="ai-transcript">' + AI.transcript.map(function (m) {
+        return '<div class="bubble ' + (m.role === 'user' ? 'me' : 'ai') + '">' + esc(m.text) + '</div>';
+      }).join('') + (AI.busy ? '<div class="bubble ai typing">…</div>' : '') + '</div>';
+      html += '<div class="ai-controls"><button class="btn btn-ghost" data-a="ai-form">' + icon('edit', 16) + 'Formulaire</button>' +
+        (V.canListen ? '<button class="mic-btn' + (AI.listening || AI.speaking ? '' : ' off') + '" data-a="ai-mic" aria-label="' + (AI.listening ? 'Couper le micro' : AI.speaking ? 'Interrompre et parler' : 'Parler') + '"' + (AI.busy ? ' disabled' : '') + '>' + icon('mic', 26) + '</button>' : '') +
+        '<button class="btn btn-ghost" data-a="ai-human">' + icon('users', 16) + 'Un humain</button></div>' +
+        '<form class="ai-input" id="ai-form"><input id="ai-text" autocomplete="off" placeholder="Écrire un message…" maxlength="600" aria-label="Votre message">' +
+        '<button class="iconbtn" type="submit" aria-label="Envoyer"' + (AI.busy ? ' disabled' : '') + '>' + icon('arrow', 18) + '</button></form>';
+    }
+    $ai.innerHTML = '<div class="ai-overlay"><div class="glass ai-panel" role="dialog" aria-modal="true" aria-label="Réceptionniste IA">' + html + '</div></div>';
+    var t = document.getElementById('ai-transcript');
+    if (t) t.scrollTop = t.scrollHeight;
+    var inp = document.getElementById('ai-text');
+    if (inp) { inp.value = draft; if (AI.mode === 'text' && !AI.busy) inp.focus(); }
+  }
+
+  function aiLive(text) {
+    AI.live = text;
+    var el = document.getElementById('ai-live');
+    if (el) el.textContent = text;
+  }
+
+  function aiStart(mode) {
+    if (!AI || AI.busy) return;
+    AI.busy = true;
+    if (mode === 'voice') V.unlock(); // pendant le geste de l'utilisateur (iOS)
+    aiRender();
+    var ready = mode === 'voice'
+      ? V.requestMic().then(function () { AI.mode = 'voice'; }).catch(function () { AI.mode = 'text'; O.toast('Micro refusé : vous pouvez écrire vos messages.', 'warn'); })
+      : Promise.resolve().then(function () { AI.mode = 'text'; });
+    ready.then(function () { return O.request('/ai/sessions', { method: 'POST', body: { channel: AI.mode } }); })
+      .then(function (r) {
+        if (!AI) return;
+        AI.id = r.session.id; AI.token = r.session.token; AI.busy = false; AI.phase = 'chat';
+        aiReply(r.reply, r.state, null);
+      })
+      .catch(function (e) { if (!AI) return; AI.busy = false; aiRender(); O.toast(e.message, 'bad'); });
+  }
+
+  function aiReply(text, state, action) {
+    AI.transcript.push({ role: 'assistant', text: text });
+    if (state) AI.fiche = state.fields || [];
+    AI.live = text;
+    var next = function () {
+      if (!AI) return;
+      if (action) aiAction(action);
+      else if (AI.mode === 'voice') aiListen();
+    };
+    if (AI.mode === 'voice' && V.canSpeak) {
+      AI.speaking = true; aiRender();
+      V.speak(text).then(function () { if (!AI || !AI.speaking) return; AI.speaking = false; aiRender(); next(); });
+    } else { aiRender(); next(); }
+  }
+
+  function aiListen() {
+    if (!AI || AI.busy || !V.canListen) return;
+    AI.listening = true; AI.live = ''; aiRender();
+    V.listen({
+      onInterim: function (t) { if (AI) aiLive(t); },
+      onEnd: function (text) {
+        if (!AI) return;
+        AI.listening = false;
+        if (text) aiSend(text);
+        else { AI.live = 'Je n’ai rien entendu. Touchez le micro pour parler.'; aiRender(); }
+      },
+      onError: function (err) {
+        if (!AI) return;
+        AI.listening = false;
+        if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'unsupported') { AI.mode = 'text'; O.toast('Micro indisponible : vous pouvez écrire.', 'warn'); }
+        aiRender();
+      },
+    });
+  }
+
+  function aiSend(text) {
+    if (!AI || AI.busy || !AI.id) return;
+    V.stopListening(); V.stopSpeaking();
+    AI.speaking = false; AI.listening = false; AI.busy = true; AI.live = '';
+    AI.transcript.push({ role: 'user', text: text });
+    aiRender();
+    O.request('/ai/sessions/' + AI.id + '/messages', { method: 'POST', body: { text: text }, headers: { 'X-AI-Token': AI.token } })
+      .then(function (r) { if (!AI) return; AI.busy = false; aiReply(r.reply, r.state, r.action); })
+      .catch(function (e) {
+        if (!AI) return;
+        AI.busy = false;
+        if (e.status === 410) AI.transcript.push({ role: 'assistant', text: e.message });
+        else O.toast(e.message, 'bad');
+        aiRender();
+      });
+  }
+
+  // Passage au paiement, à la confirmation ou au formulaire, avec ce qui a été recueilli.
+  function aiAction(a) {
+    if (a.type === 'human') { AI.human = a; aiRender(); return; }
+    var d = newDraft();
+    d.mode = a.mode || null;
+    d.packageId = a.packageId || null;
+    Object.keys(a.info || {}).forEach(function (k) { if (k in d.info) d.info[k] = a.info[k]; });
+    if (a.booking) {
+      d.id = a.booking.id; d.token = a.token; d.booking = a.booking; d.start = a.booking.start;
+      d.date = a.booking.start.slice(0, 10); d.mode = a.booking.mode; d.packageId = a.booking.packageId;
+    }
+    S.d = d; S.pay = null; S.monthData = null; S.dayData = null; S.conflict = null;
+    aiClose(true);
+    if (a.type === 'payment') { d.payKey = O.uuid(); go(7); }
+    else if (a.type === 'success') { S.view = 'success'; render(); window.scrollTo(0, 0); }
+    else go(d.booking ? 5 : d.packageId ? 3 : d.mode ? 2 : 1);
+  }
+
+  function aiHandoff() {
+    if (!AI) return;
+    if (!AI.id) { aiClose(false); go(1); return; }
+    var id = AI.id, token = AI.token;
+    AI.id = null; // évite une seconde clôture
+    O.request('/ai/sessions/' + id + '/end', { method: 'POST', body: { keepHold: true }, headers: { 'X-AI-Token': token } })
+      .then(function (r) { aiAction(Object.assign({ type: 'form' }, r.handoff || {})); })
+      .catch(function () { aiClose(false); go(1); });
+  }
+
+  function aiClose(keepHold) {
+    if (!AI) return;
+    V.stopListening(); V.stopSpeaking();
+    if (AI.id) O.request('/ai/sessions/' + AI.id + '/end', { method: 'POST', body: { keepHold: Boolean(keepHold) }, headers: { 'X-AI-Token': AI.token } }).catch(function () { /* rien */ });
+    AI = null;
+    aiRender();
+  }
+
   // ---------- Événements ----------
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-a]');
@@ -563,8 +761,20 @@
     if (t.id === 'agree') { S.d.agreed = t.checked; var b = document.getElementById('confirm-btn'); if (b) b.disabled = !t.checked; save(); }
     if (t.name === 'pay') { S.d.payMethod = t.value; render(); }
   });
-  document.addEventListener('submit', function (e) { if (e.target.id === 'info-form') { e.preventDefault(); A['info-next'](); } });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $sheet.innerHTML) A.close(); });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id === 'info-form') { e.preventDefault(); A['info-next'](); }
+    if (e.target.id === 'ai-form') {
+      e.preventDefault();
+      var inp = document.getElementById('ai-text');
+      var text = inp && inp.value.trim();
+      if (text && AI && !AI.busy) { inp.value = ''; AI.mode = 'text'; aiSend(text); }
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (AI) aiClose(false);
+    else if ($sheet.innerHTML) A.close();
+  });
 
   // Compte à rebours et suivi du paiement.
   var ticks = 0;

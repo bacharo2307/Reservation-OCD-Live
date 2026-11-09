@@ -15,9 +15,10 @@
     "create-admin": "node src/scripts/create-admin.js",
     "seed:demo": "node src/scripts/demo-data.js seed",
     "demo:reset": "node src/scripts/demo-data.js reset",
-    "test": "node --test --test-concurrency=1 tests/booking.test.js tests/http.test.js"
+    "test": "node --test --test-concurrency=1 tests/booking.test.js tests/http.test.js tests/ai.test.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "compression": "^1.8.2",
     "express": "^4.22.3",
     "helmet": "^8.3.0",

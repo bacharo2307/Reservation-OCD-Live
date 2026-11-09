@@ -47,7 +47,7 @@
 
   // ---------- Rendu ----------
   function renderHeader() {
-    $header.innerHTML = '<div class="topbar-in"><a class="brand" href="/admin/">' + O.wordmark() + '<span class="muted small" style="font-weight:700">Espace équipe</span></a>' +
+    $header.innerHTML = '<div class="topbar-in"><a class="brand" href="/admin/">' + O.wordmark(S.brand) + '<span class="muted small" style="font-weight:700">Espace équipe</span></a>' +
       '<div class="top-actions">' + (S.user ? '<span class="small muted" style="display:none" id="who">' + esc(S.user.name) + '</span>' : '') +
       '<button class="iconbtn" data-a="theme" aria-label="Changer de thème">' + icon(O.currentTheme() === 'dark' ? 'sun' : 'moon', 20) + '</button>' +
       (S.user ? '<button class="iconbtn" data-a="logout" aria-label="Se déconnecter" title="Se déconnecter">' + icon('logout', 20) + '</button>' : '') + '</div></div>';
@@ -140,7 +140,7 @@
       actions.push('<button class="btn btn-danger btn-sm" data-a="cancel" data-id="' + b.id + '">Annuler</button>');
     }
     S.data['b:' + b.id] = b;
-    return '<article class="glass res"><div class="res-top"><span class="res-who">' + esc(c.name) + ' · ' + esc(c.company) + '</span>' + chip(STATUS, b.status) + '</div>' +
+    return '<article class="glass res"><div class="res-top"><span class="res-who">' + esc(c.name) + ' · ' + esc(c.company) + '</span><span class="row">' + (b.source === 'voice' ? '<span class="chip tone-info">' + icon('mic', 12) + 'Via la réceptionniste IA</span>' : '') + chip(STATUS, b.status) + '</span></div>' +
       '<div class="res-line">' + icon('clock', 15) + '<span><b>' + F.time(s) + ' – ' + F.time(e) + '</b> · ' + esc(b.packageName) + (b.sessions > 1 ? ' (' + b.sessions + ' lives)' : '') + ' · ' + F.price(b.price) + (b.paymentStatus ? ' · paiement ' + esc((PAY_STATUS[b.paymentStatus] || [b.paymentStatus])[0].toLowerCase()) : '') + '</span></div>' +
       '<div class="res-line">' + icon(b.mode === 'presentiel' ? 'studio' : 'globe', 15) + '<span>' + where + '</span></div>' +
       '<div class="res-line">' + icon('box', 15) + '<span>' + esc(c.sector) + ' — ' + esc(c.products) + '</span></div>' +
@@ -247,7 +247,20 @@
     var num = function (form, k, label, v, min, max, hint) {
       return '<div class="field"><label for="' + form + '-' + k + '">' + label + '</label><input id="' + form + '-' + k + '" name="' + k + '" type="number" min="' + min + '" max="' + max + '" value="' + v + '" required>' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
     };
-    return '<div class="stack"><form class="glass form" id="set-studio" data-key="studio"><h3>Horaires du studio (heure de Lomé)</h3><div class="grid2">' +
+    var txt = function (form, k, label, v, ph, hint) {
+      return '<div class="field"><label for="' + form + '-' + k + '">' + label + '</label><input id="' + form + '-' + k + '" name="' + k + '" value="' + esc(v || '') + '" placeholder="' + esc(ph || '') + '">' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+    };
+    var contact = s.contact || {}, pay = s.payment || {};
+    return '<div class="stack">' +
+      '<form class="glass form" id="set-payment" data-key="payment"><h3>Paiement Mobile Money</h3><div class="grid2">' +
+      txt('pm', 'mobileMoneyNumber', 'Numéro Mobile Money affiché aux clients', pay.mobileMoneyNumber, '+228 90 00 00 00', 'Vide : l’équipe contacte le client pour le paiement.') +
+      txt('pm', 'mobileMoneyName', 'Nom du bénéficiaire', pay.mobileMoneyName, 'OCD') +
+      '</div><button class="btn btn-primary" type="submit">Enregistrer</button></form>' +
+      '<form class="glass form" id="set-contact" data-key="contact"><h3>Contact de l’équipe</h3><div class="grid2">' +
+      txt('ct', 'whatsapp', 'WhatsApp de l’équipe', contact.whatsapp, '+228 90 00 00 00', 'Proposé quand un client demande à parler à quelqu’un.') +
+      txt('ct', 'teamEmails', 'Emails qui reçoivent les notifications', (contact.teamEmails || []).join(', '), 'equipe@exemple.com, bovann@exemple.com', 'Séparés par des virgules.') +
+      '</div><button class="btn btn-primary" type="submit">Enregistrer</button></form>' +
+      '<form class="glass form" id="set-studio" data-key="studio"><h3>Horaires du studio (heure de Lomé)</h3><div class="grid2">' +
       num('st', 'openHour', 'Ouverture (heure)', s.studio.openHour, 0, 23) + num('st', 'closeHour', 'Fermeture (heure)', s.studio.closeHour, 1, 24) +
       num('st', 'stepMin', 'Intervalle entre deux horaires proposés (min)', s.studio.stepMin, 15, 120) + num('st', 'bufferMin', 'Marge de préparation entre deux lives (min)', s.studio.bufferMin, 0, 180) +
       '</div><button class="btn btn-primary" type="submit">Enregistrer</button></form>' +
@@ -257,7 +270,7 @@
       num('bk', 'leadMin', 'Délai minimum avant un live (min)', s.booking.leadMin, 0, 2880) + num('bk', 'horizonDays', 'Réservable jusqu’à (jours)', s.booking.horizonDays, 7, 365) +
       '<div class="field"><label for="bk-launch">Date d’ouverture des lives</label><input id="bk-launch" name="launchDate" type="date" value="' + esc(s.booking.launchDate) + '" required></div>' +
       '</div><button class="btn btn-primary" type="submit">Enregistrer</button></form>' +
-      '<form class="glass form" id="set-voice" data-key="voice"><h3>Réceptionniste IA vocale</h3><label class="check"><input type="checkbox" name="enabled"' + (s.voice.enabled ? ' checked' : '') + '><span>Activer la réceptionniste vocale (prochaine version)</span></label>' +
+      '<form class="glass form" id="set-voice" data-key="voice"><h3>Réceptionniste IA</h3><label class="check"><input type="checkbox" name="enabled"' + (s.voice.enabled ? ' checked' : '') + '><span>Proposer la réceptionniste IA sur le site (nécessite la clé ANTHROPIC_API_KEY sur Railway)</span></label>' +
       '<button class="btn btn-primary" type="submit">Enregistrer</button></form></div>';
   };
 
@@ -474,5 +487,6 @@
     }, 30000);
   }
 
+  O.request('/config').then(function (c) { S.brand = c.brand; renderHeader(); }).catch(function () { /* logo par défaut */ });
   api('/me').then(function (r) { S.user = r.user; render(); startPolling(); }).catch(function () { S.user = null; render(); });
 })();

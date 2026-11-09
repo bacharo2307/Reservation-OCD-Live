@@ -350,6 +350,8 @@ const SETTING_RULES = {
   studio: { openHour: [0, 23], closeHour: [1, 24], stepMin: [15, 120], bufferMin: [0, 180] },
   booking: { holdMin: [2, 30], paymentTimeoutMin: [5, 2880], horizonDays: [7, 365], leadMin: [0, 2880] },
   voice: { enabled: 'bool' },
+  contact: { whatsapp: 'phone', teamEmails: 'emails' },
+  payment: { mobileMoneyNumber: 'phone', mobileMoneyName: 'text' },
 };
 
 router.put('/settings/:key', need('settings.write'), wrap(async (req, res) => {
@@ -361,6 +363,19 @@ router.put('/settings/:key', need('settings.write'), wrap(async (req, res) => {
     const v = (req.body || {})[k];
     if (v === undefined) continue;
     if (rule === 'bool') { next[k] = Boolean(v); continue; }
+    if (rule === 'text') { next[k] = clean(String(v), 60); continue; }
+    if (rule === 'phone') {
+      const p = clean(String(v), 25);
+      if (p && (!/^\+?[\d\s().-]+$/.test(p) || p.replace(/\D/g, '').length < 8)) throw bad('Numéro de téléphone invalide.');
+      next[k] = p;
+      continue;
+    }
+    if (rule === 'emails') {
+      const list = (Array.isArray(v) ? v : String(v).split(/[,;\s]+/)).map((x) => String(x).trim().toLowerCase()).filter(Boolean);
+      if (list.length > 10 || list.some((x) => !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(x))) throw bad('Adresses email invalides.');
+      next[k] = list;
+      continue;
+    }
     const n = Number(v);
     if (!Number.isInteger(n) || n < rule[0] || n > rule[1]) throw bad(`Valeur invalide pour ${k}.`);
     next[k] = n;

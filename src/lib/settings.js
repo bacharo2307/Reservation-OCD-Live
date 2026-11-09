@@ -7,7 +7,9 @@ const DEFAULTS = {
   studio: { openHour: 8, closeHour: 20, stepMin: 30, bufferMin: 30 },
   booking: { holdMin: 5, paymentTimeoutMin: 60, launchDate: '2026-12-01', horizonDays: 120, leadMin: 60 },
   brand: { name: 'OCD LIVE', org: "OCD — Opportunité C'est Dehors", slogan: "Les opportunités, c'est dehors.", channel: 'House of Challenge', studio: 'Studio OCD de Lomé', logoUrl: '' },
-  voice: { enabled: false },
+  voice: { enabled: true },
+  contact: { whatsapp: '', teamEmails: [] },
+  payment: { mobileMoneyNumber: '', mobileMoneyName: 'OCD' },
 };
 
 let cached = null;

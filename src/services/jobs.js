@@ -10,6 +10,7 @@ const { sendMail } = require('../lib/mailer');
 const { loadForText, describe } = require('../lib/notify');
 const { expireStale } = require('./booking');
 const { fmtPrice } = require('../lib/time');
+const { getSettings } = require('../lib/settings');
 
 const MAX_ATTEMPTS = 5;
 
@@ -44,9 +45,10 @@ function customerEmail(b, kind) {
 async function runJob(c, job) {
   const p = job.payload;
   if (job.type === 'email.team') {
-    if (!config.mail.teamEmails.length) return 'skipped';
+    const team = ((await getSettings()).contact || {}).teamEmails || [];
+    if (!team.length) return 'skipped';
     const link = config.publicUrl ? `\n\nOuvrir l’espace équipe : ${config.publicUrl}/admin/` : '';
-    const r = await sendMail({ to: config.mail.teamEmails, subject: `[OCD LIVE] ${p.title}`, text: p.body + link });
+    const r = await sendMail({ to: team, subject: `[OCD LIVE] ${p.title}`, text: p.body + link });
     return r.sent ? 'done' : 'skipped';
   }
   if (job.type === 'email.customer') {
@@ -94,6 +96,8 @@ async function runOnce() {
   const expired = await db.withTx((c) => expireStale(c));
   const jobs = await processJobs();
   await db.query('DELETE FROM admin_sessions WHERE expires_at < now()');
+  // Conversations IA : texte conservé 24 h maximum, aucun audio n'est jamais stocké.
+  await db.query(`DELETE FROM ai_sessions WHERE updated_at < now() - interval '24 hours'`);
   if (expired || jobs) log.info('worker', { expired, jobs });
   return { expired, jobs };
 }

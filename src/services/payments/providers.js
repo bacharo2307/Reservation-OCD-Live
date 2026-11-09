@@ -7,11 +7,13 @@
 //   verifyWebhook(rawBody, headers)        -> true/false (signature du prestataire)
 //   parseWebhook(rawBody)                  -> { eventId, type: 'succeeded'|'failed', providerRef, amount }
 //
-// « manual » : le client paie par Mobile Money au numéro OCD, l'équipe confirme à réception.
-// « demo »   : paiement simulé pour la validation du projet. Interdit en production sauf ALLOW_DEMO_PAYMENTS=true.
+// « manual » : le client paie par Mobile Money au numéro OCD (réglé dans l'espace équipe),
+//              l'équipe confirme à réception.
+// « demo »   : paiement simulé, réservé au développement et aux tests (jamais en production).
 
 const crypto = require('node:crypto');
 const config = require('../../config');
+const { getSettings } = require('../../lib/settings');
 const { fmtPrice } = require('../../lib/time');
 
 const rand = () => crypto.randomBytes(6).toString('hex');
@@ -20,9 +22,10 @@ const manual = {
   name: 'manual',
   live: true,
   async create({ booking }) {
-    const steps = config.payments.manualNumber
+    const pay = (await getSettings()).payment || {};
+    const steps = pay.mobileMoneyNumber
       ? [
-        `Envoyez ${fmtPrice(booking.price)} par Mobile Money au ${config.payments.manualNumber} (${config.payments.manualName}).`,
+        `Envoyez ${fmtPrice(booking.price)} par Mobile Money au ${pay.mobileMoneyNumber} (${pay.mobileMoneyName || 'OCD'}).`,
         `Indiquez la référence ${booking.ref} dans le motif du transfert.`,
         'L’équipe OCD confirme votre réservation dès réception du paiement.',
       ]
@@ -38,7 +41,7 @@ const manual = {
 };
 
 function sign(body) {
-  return crypto.createHmac('sha256', config.payments.demoWebhookSecret).update(body).digest('hex');
+  return crypto.createHmac('sha256', config.appSecret).update(body).digest('hex');
 }
 
 const demo = {

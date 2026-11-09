@@ -1,6 +1,6 @@
 /* OCD LIVE — service worker : l'application s'ouvre vite, même sur une connexion faible.
    Jamais de cache pour l'API (disponibilités, réservations, paiements) ni pour l'espace équipe. */
-const CACHE = 'ocdlive-shell-v1';
+const CACHE = 'ocdlive-shell-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
